@@ -89,3 +89,34 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_get_free(void)
+{
+   return get_free();
+}
+
+uint64
+sys_make_lock(void)
+{
+  int n;
+
+  argint(0, &n);
+  return make_lock(n);
+}
+
+uint64
+sys_make_unlock(void)
+{
+  int n;
+  argint(0, &n);
+  return make_unlock(n);
+}
+
+uint64
+sys_make_free(void)
+{
+  int n;
+  argint(0, &n);
+  return make_free(n);
+}
