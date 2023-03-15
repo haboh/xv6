@@ -1,8 +1,8 @@
 #include "types.h"
 #include "param.h"
+#include "sleeplocks_container.h"
 #include "memlayout.h"
 #include "riscv.h"
-#include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
 
@@ -680,4 +680,96 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+extern struct sleeplocks_container_t sleeplocks_container;
+
+int
+get_free(void)
+{
+	acquire(&sleeplocks_container.locker);
+	for (int i = 0; i < SLEEPLOCKS_CONTAINER_SIZE; i++) {
+		if (!sleeplocks_container.busy_locks[i]) {
+			sleeplocks_container.busy_locks[i] = 1;
+			release(&sleeplocks_container.locker);
+			return i;
+		}
+	}
+	release(&sleeplocks_container.locker);
+
+	// Error	
+	return CONTAINER_NO_EMPTY_LOCK_ERROR;
+}
+
+int
+make_lock(int n)
+{
+	acquire(&sleeplocks_container.locker);
+	if (!sleeplocks_container.busy_locks[n]) {
+		release(&sleeplocks_container.locker);
+		
+		// Error, container not busy
+		return CONTAINER_NOT_BUSY_ERROR;
+	}
+	if (sleeplocks_container.locks[n].locked) {
+		release(&sleeplocks_container.locker);
+
+		// Error, already locked
+		return CONTAINER_ALREADY_LOCKED_ERROR;
+	}
+
+	
+	acquiresleep(sleeplocks_container.locks + n);
+	
+	release(&sleeplocks_container.locker);
+
+	// Ok
+	return CONTAINER_OK_REQUEST;	
+}
+
+int
+make_unlock(int n) 
+{
+	acquire(&sleeplocks_container.locker);
+	if (!sleeplocks_container.busy_locks[n]) {
+		release(&sleeplocks_container.locker);
+		
+		// Error, container not busy
+		return CONTAINER_NOT_BUSY_ERROR;
+	}
+	if (!sleeplocks_container.locks[n].locked) {
+		release(&sleeplocks_container.locker);
+
+		// Error, not locked
+		return CONTAINER_NOT_LOCKED_ERROR;
+	}
+
+	releasesleep(sleeplocks_container.locks + n);
+
+	release(&sleeplocks_container.locker);
+
+	// Ok
+	return CONTAINER_OK_REQUEST;
+}
+
+
+int
+make_free(int n) 
+{	
+	acquire(&sleeplocks_container.locker);
+	if (!sleeplocks_container.busy_locks[n]) {
+		release(&sleeplocks_container.locker);
+
+		// Error, not busy
+		return CONTAINER_NOT_BUSY_ERROR;
+	}
+
+	if (sleeplocks_container.locks[n].locked) {
+		releasesleep(sleeplocks_container.locks + n);
+	}
+
+	release(&sleeplocks_container.locker);
+
+	// Ok
+	return CONTAINER_OK_REQUEST;
 }

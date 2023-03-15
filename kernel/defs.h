@@ -106,6 +106,10 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
+int             get_free(void);
+int             make_lock(int);
+int             make_unlock(int);
+int             make_free(int);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
