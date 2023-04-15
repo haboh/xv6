@@ -123,8 +123,9 @@ int main(int argc, char *argv[]) {
 			exit(1);
 		}
 		wait(0);
-	} else {
-	        safe_print(lock_bucket, "Error in creating new process!");	
+	} else { 
+		safe_print(lock_bucket, "Error in creating new process!");	
+		make_free(lock_bucket);
 		exit(0);
 	}
 

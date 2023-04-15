@@ -711,18 +711,10 @@ make_lock(int n)
 		// Error, container not busy
 		return CONTAINER_NOT_BUSY_ERROR;
 	}
-	if (sleeplocks_container.locks[n].locked) {
-		release(&sleeplocks_container.locker);
-
-		// Error, already locked
-		return CONTAINER_ALREADY_LOCKED_ERROR;
-	}
-
+	release(&sleeplocks_container.locker);
 	
 	acquiresleep(sleeplocks_container.locks + n);
 	
-	release(&sleeplocks_container.locker);
-
 	// Ok
 	return CONTAINER_OK_REQUEST;	
 }
@@ -737,16 +729,9 @@ make_unlock(int n)
 		// Error, container not busy
 		return CONTAINER_NOT_BUSY_ERROR;
 	}
-	if (!sleeplocks_container.locks[n].locked) {
-		release(&sleeplocks_container.locker);
-
-		// Error, not locked
-		return CONTAINER_NOT_LOCKED_ERROR;
-	}
+	release(&sleeplocks_container.locker);
 
 	releasesleep(sleeplocks_container.locks + n);
-
-	release(&sleeplocks_container.locker);
 
 	// Ok
 	return CONTAINER_OK_REQUEST;
@@ -763,12 +748,12 @@ make_free(int n)
 		// Error, not busy
 		return CONTAINER_NOT_BUSY_ERROR;
 	}
-
+	
+	release(&sleeplocks_container.locker);
+	
 	if (sleeplocks_container.locks[n].locked) {
 		releasesleep(sleeplocks_container.locks + n);
 	}
-
-	release(&sleeplocks_container.locker);
 
 	// Ok
 	return CONTAINER_OK_REQUEST;
